@@ -39,3 +39,7 @@ async def get_model(model_name:ModelName):
     if model_name.value == "lenet":
         return {"model_name": model_name, "message":"LeCNN all the images"}
     return {"model_name": model_name, "message":"Have some residuals"}
+
+@app.get("/hello")
+def say_hello():
+    return {"message":"Hello World"}
