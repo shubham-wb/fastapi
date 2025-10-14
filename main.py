@@ -1,6 +1,6 @@
 from typing import Union
 
-from fastapi import FastAPI
+from fastapi import Body, FastAPI
 from pydantic import BaseModel
 
 from enum import Enum 
@@ -40,6 +40,21 @@ async def get_model(model_name:ModelName):
         return {"model_name": model_name, "message":"LeCNN all the images"}
     return {"model_name": model_name, "message":"Have some residuals"}
 
-@app.get("/hello")
+
+class Post(BaseModel):
+    title: str
+    content: str
+
+@app.get("/hello") 
+# decorator
 def say_hello():
     return {"message":"Hello World"}
+
+@app.get("/posts")
+def get_posts():
+    return {"data":"This is your posts"}
+
+@app.post("/create-posts")
+def create_posts(payload:Post):
+    print(payload)
+    return {"message":"Successfully created post!"}
