@@ -1,8 +1,8 @@
 from typing import Optional, Union
 
-from fastapi import Body, FastAPI
+from fastapi import Body, FastAPI, Response, status
 from pydantic import BaseModel
-
+from random import randrange
 from enum import Enum 
 
 # Import Enum and create a sub-class that inherits from str and from Enum.
@@ -60,20 +60,22 @@ def get_posts():
     return {"data":"This is your posts"}
 
 @app.get("/posts/{id}")
-def get_post(id:int):
+def get_post(id:int,response:Response):
     for post in my_posts:
         if post['id'] == id:
             return {"post_detail":post}
+        response.status_code = status.HTTP_404_NOT_FOUND 
     return {"message": "post not found"}
 
 @app.post("/create-posts")
 def create_posts(payload:Post):
-    print(payload)
-    '''
-   payload -> title='Hello' content='shubham' rating=4 published=True
-    '''
-    print(payload.dict())
-    '''
-    payload.dict() -> {'title': 'Hello', 'content': 'shubham','rating': 4, 'published': True}
-    '''
-    return {"message":"Successfully created post!"}
+    post_dict = payload.dict()
+    post_dict['id'] = randrange(0,1000000)
+    my_posts.append(post_dict)
+    
+    return {"message":"Successfully created post!", "data":post_dict}    
+
+@app.get("/posts/latest")
+def get_latest_post():
+    post = my_posts[len(my_posts)-1]
+    return {"post_detail":post}
