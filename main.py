@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional, Union
 
 from fastapi import Body, FastAPI
 from pydantic import BaseModel
@@ -44,6 +44,11 @@ async def get_model(model_name:ModelName):
 class Post(BaseModel):
     title: str
     content: str
+    rating: Optional[int] = None
+    published: bool = True
+
+my_posts = [{"title":"title of post 1","content":"content of post 1", "id":1}]
+
 
 @app.get("/hello") 
 # decorator
@@ -54,7 +59,21 @@ def say_hello():
 def get_posts():
     return {"data":"This is your posts"}
 
+@app.get("/posts/{id}")
+def get_post(id:int):
+    for post in my_posts:
+        if post['id'] == id:
+            return {"post_detail":post}
+    return {"message": "post not found"}
+
 @app.post("/create-posts")
 def create_posts(payload:Post):
     print(payload)
+    '''
+   payload -> title='Hello' content='shubham' rating=4 published=True
+    '''
+    print(payload.dict())
+    '''
+    payload.dict() -> {'title': 'Hello', 'content': 'shubham','rating': 4, 'published': True}
+    '''
     return {"message":"Successfully created post!"}
