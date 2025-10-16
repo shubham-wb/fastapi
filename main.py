@@ -1,3 +1,4 @@
+from http.client import HTTPException
 from typing import Optional, Union
 
 from fastapi import Body, FastAPI, Response, status
@@ -64,8 +65,9 @@ def get_post(id:int,response:Response):
     for post in my_posts:
         if post['id'] == id:
             return {"post_detail":post}
-        response.status_code = status.HTTP_404_NOT_FOUND 
-    return {"message": "post not found"}
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id: {id} was not found")
+        # response.status_code = status.HTTP_404_NOT_FOUND 
+    # return {"message": "post not found"}
 
 @app.post("/create-posts")
 def create_posts(payload:Post):
@@ -79,3 +81,11 @@ def create_posts(payload:Post):
 def get_latest_post():
     post = my_posts[len(my_posts)-1]
     return {"post_detail":post}
+
+@app.delete("/posts/{id}")
+def delete_post(id:int):
+    for i, post in enumerate(my_posts):  #enumerate gives a tuple  (index, post)
+        if post['id'] == id:
+            my_posts.pop(i)
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id: {id} was not found")
