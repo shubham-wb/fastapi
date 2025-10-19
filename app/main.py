@@ -2,6 +2,7 @@ from typing import Optional, Union
 import os
  
 from fastapi import Body, FastAPI, Response, status, HTTPException
+from fastapi.params import Depends
 from pydantic import BaseModel
 from random import randrange
 from enum import Enum 
@@ -10,7 +11,8 @@ import time
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
 from . import models
-from .database import engine, SessionLocal
+from sqlalchemy.orm import Session 
+from .database import engine, SessionLocal, get_db
 # Import Enum and create a sub-class that inherits from str and from Enum.
 
 models.Base.metadata.create_all(bind=engine)
@@ -21,17 +23,12 @@ load_dotenv()
 
 app = FastAPI()
 
+
 @app.get("/")
 def read_root():
     return {"Hello":"World"}
 
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 class Post(BaseModel):
     title: str
@@ -55,9 +52,8 @@ while True:
         time.sleep(2)
 
 @app.get("/posts")
-def get_posts():
-    cursor.execute("""SELECT * FROM posts""")
-    posts = cursor.fetchall()
+def get_posts(db:Session = Depends(get_db)):
+    posts = db.query(models.Post).all()
     return {"data":posts}
 
 @app.get("/posts/{id}")
@@ -71,13 +67,17 @@ def get_post(id: int):
     
     return {"post_detail": post}
 
-@app.post("/create-posts")
-def create_posts(payload: Post):
-    cursor.execute("""INSERT INTO posts(title,content,published) VALUES(%s,%s,%s) RETURNING *""", 
-                   (payload.title, payload.content, payload.published))
-    new_post = cursor.fetchone()
-    conn.commit()
-    return {"message": "Successfully created post!", "data": new_post}
+@app.post("/posts")
+def create_posts(post: Post, db:Session = Depends(get_db)):
+    # cursor.execute("""INSERT INTO posts(title,content,published) VALUES(%s,%s,%s) RETURNING *""", 
+    #                (payload.title, payload.content, payload.published))
+    # new_post = cursor.fetchone()
+    # conn.commit()
+   new_post = models.Post(title=post.title, content=post.content, published=post.published)
+   db.add(new_post)
+   db.commit() 
+   db.refresh(new_post) 
+   return {"message": "Successfully created post!", "data": new_post}
 
 @app.delete("/posts/{id}")
 def delete_post(id: int):
