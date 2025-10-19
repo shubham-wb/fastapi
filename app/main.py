@@ -1,6 +1,6 @@
 from typing import Optional, Union
 import os
-
+ 
 from fastapi import Body, FastAPI, Response, status, HTTPException
 from pydantic import BaseModel
 from random import randrange
@@ -9,21 +9,29 @@ import psycopg2
 import time 
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
-
-
+from . import models
+from .database import engine, SessionLocal
 # Import Enum and create a sub-class that inherits from str and from Enum.
+
+models.Base.metadata.create_all(bind=engine)
+
 
 # Load environment variables
 load_dotenv()
 
-
 app = FastAPI()
-
 
 @app.get("/")
 def read_root():
     return {"Hello":"World"}
 
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 class Post(BaseModel):
     title: str
