@@ -23,10 +23,8 @@ app = FastAPI()
 @app.get("/")
 def read_root():
     return {"Hello":"World"}
-
-
-
-
+ 
+  
 while True:
     try:
         conn = psycopg2.connect(
