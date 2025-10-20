@@ -1,20 +1,16 @@
-from typing import Optional, Union
 import os
  
-from fastapi import Body, FastAPI, Response, status, HTTPException
+from fastapi import FastAPI, Response, status, HTTPException
 from fastapi.params import Depends
-from pydantic import BaseModel
-from random import randrange
-from enum import Enum 
 import psycopg2
 import time 
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
 from . import models
 from sqlalchemy.orm import Session 
-from .database import engine, SessionLocal, get_db
+from .database import engine, get_db
 # Import Enum and create a sub-class that inherits from str and from Enum.
-
+from .schemas import Post,PostCreate,PostBase
 models.Base.metadata.create_all(bind=engine)
 
 
@@ -30,10 +26,6 @@ def read_root():
 
 
 
-class Post(BaseModel):
-    title: str
-    content: str
-    published: bool = True
 
 while True:
     try:
@@ -53,7 +45,7 @@ while True:
 
 @app.get("/posts")
 def get_posts(db:Session = Depends(get_db)):
-    posts = db.query(models.Post).all()
+    posts = db.query(models.PostBase).all()
     return {"data":posts}
 
 @app.get("/posts/{id}")
@@ -62,7 +54,7 @@ def get_post(id: int,db:Session = Depends(get_db)):
     # cursor.execute("""SELECT * FROM posts WHERE id = %s""", (id,))
     # post = cursor.fetchone()
     
-    post = db.query(models.Post).filter(models.Post.id == id).first()
+    post = db.query(models.PostBase).filter(models.PostBase.id == id).first()
 
 
     if not post:
@@ -70,14 +62,14 @@ def get_post(id: int,db:Session = Depends(get_db)):
     
     return {"post_detail": post}
 
-@app.post("/posts")
-def create_posts(post: Post, db:Session = Depends(get_db)):
+@app.post("/posts",response_model=Post)
+def create_posts(post: PostBase, db:Session = Depends(get_db)):
     # cursor.execute("""INSERT INTO posts(title,content,published) VALUES(%s,%s,%s) RETURNING *""", 
     #                (payload.title, payload.content, payload.published))
     # new_post = cursor.fetchone()
     # conn.commit()
-#    new_post = models.Post(title=post.title, content=post.content, published=post.published)
-   new_post = models.Post(**post.dict())
+#    new_post = models.PostBase(title=post.title, content=post.content, published=post.published)
+   new_post = models.PostBase(**post.dict())
    db.add(new_post)
    db.commit() 
    db.refresh(new_post) 
@@ -88,7 +80,7 @@ def delete_post(id: int, db:Session = Depends(get_db)):
     # cursor.execute("""DELETE FROM posts WHERE id = %s RETURNING *""", (id,))
     # deleted_post = cursor.fetchone()
     
-    post = db.query(models.Post).filter(models.Post.id == id)
+    post = db.query(models.PostBase).filter(models.PostBase.id == id)
     
     if post.first() == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id: {id} does not exist")
@@ -100,13 +92,13 @@ def delete_post(id: int, db:Session = Depends(get_db)):
 
 
 @app.put("/posts/{id}")
-def update_post(id: int, payload: Post,db:Session=Depends(get_db)):
+def update_post(id: int, payload: PostBase,db:Session=Depends(get_db)):
     # cursor.execute("""UPDATE posts SET title = %s, content = %s, published = %s 
     #                   WHERE id = %s RETURNING *""", 
     #                (payload.title, payload.content, payload.published, id))
     # updated_post = cursor.fetchone()
     
-    post_query = db.query(models.Post).filter(models.Post.id == id)
+    post_query = db.query(models.PostBase).filter(models.PostBase.id == id)
 
     post = post_query.first()
     
