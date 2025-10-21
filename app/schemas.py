@@ -14,6 +14,7 @@ class PostCreate(PostBase):
 
 
 class Post(BaseModel):
+    id: int
     title: str
     content: str
     published: bool
